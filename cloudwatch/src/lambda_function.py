@@ -59,17 +59,9 @@ def _parse_cloudwatch_log(log, aws_logs_data, log_type):
         del log['timestamp']
 
     _extract_lambda_log_message(log, aws_logs_data['logGroup'])
-    log['logStream'] = aws_logs_data['logStream']
-    log['messageType'] = aws_logs_data['messageType']
-    log['owner'] = aws_logs_data['owner']
-    log['logGroup'] = aws_logs_data['logGroup']
-    log['function_version'] = aws_logs_data['function_version']
-    log['invoked_function_arn'] = aws_logs_data['invoked_function_arn']
     log['type'] = log_type
 
-    if 'data_to_enrich' in aws_logs_data:
-        for key, value in aws_logs_data['data_to_enrich'].items():
-            log[key] = value
+    log.update(aws_logs_data)
 
     # If FORMAT is json treat message as a json
     try:
@@ -89,12 +81,10 @@ def _enrich_logs_data(aws_logs_data, context):
 
         # If ENRICH has value, add the properties
         if os.environ['ENRICH']:
-            data_to_enrich = dict()
             properties_to_enrich = os.environ['ENRICH'].split(";")
             for property_to_enrich in properties_to_enrich:
                 property_key_value = property_to_enrich.split("=")
-                data_to_enrich[property_key_value[0]] = property_key_value[1]
-            aws_logs_data['data_to_enrich'] = data_to_enrich
+                aws_logs_data[property_key_value[0]] = property_key_value[1]
     except KeyError:
         pass
 
